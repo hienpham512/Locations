@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import DataTable, { defaultThemes } from "react-data-table-component";
 import {
@@ -18,9 +18,9 @@ export interface ILocation {
   id?: number;
   "Asset name": string;
   Address: string;
-  Area: number;
+  Area: string;
   Tenant: string;
-  "Rent Paid": number;
+  "Rent Paid": string;
 }
 
 export enum ACTIONS {
@@ -63,13 +63,20 @@ const customStyles = {
 };
 
 const Table: React.FC = () => {
-  const [data, setData] = React.useState<ILocation[]>([]);
-  const [duplicateData, setDuplicateData] = React.useState<ILocation[]>([]);
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
-  const [filterText, setFilterText] = React.useState("");
-  const [isOpen, setIsOpen] = React.useState<boolean>(false);
-  const [action, setAction] = React.useState<ACTIONS>(ACTIONS.CREATE);
-  const [location, setLocation] = React.useState<ILocation>();
+  const [data, setData] = useState<ILocation[]>([]);
+  const [duplicateData, setDuplicateData] = useState<ILocation[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [filterText, setFilterText] = useState("");
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [action, setAction] = useState<ACTIONS>(ACTIONS.CREATE);
+  const [location, setLocation] = useState<ILocation>({
+    "Asset name": "",
+    Address: "",
+    Area: "",
+    Tenant: "",
+    "Rent Paid": "",
+  });
+  const [dataUpdated, setDataUpdated] = useState<ILocation[]>([]);
 
   const handleFilter = (text: string) => {
     setFilterText(text);
@@ -83,13 +90,45 @@ const Table: React.FC = () => {
     setIsOpen(false);
     if (action === ACTIONS.DELETE) {
       try {
-        setIsOpen(false);
-        const newData = data.filter((item) => item.id !== attributes?.id);
+        let newData = dataUpdated.filter((item) => item.id !== attributes?.id);
         setData(newData);
         setDuplicateData(newData);
         toast.success("Location deleted successfully");
+        setIsOpen(false);
       } catch {
         toast.error("Error deleting location, please try again later");
+      }
+    } else if (action === ACTIONS.EDIT) {
+      try {
+        let newData = dataUpdated;
+        newData.forEach((item) => {
+          if (item.id === attributes?.id) {
+            item["Asset name"] = attributes!["Asset name"];
+            item.Address = attributes!.Address;
+            item.Area = attributes!.Area;
+            item.Tenant = attributes!.Tenant;
+            item["Rent Paid"] = attributes!["Rent Paid"];
+          }
+        });
+        setData(newData);
+        setDuplicateData(newData);
+        toast.success("Location edited successfully");
+        setIsOpen(false);
+      } catch {
+        toast.error("Error editing location, please try again later");
+      }
+    } else if (action === ACTIONS.CREATE) {
+      try {
+        const newData = [
+          ...dataUpdated,
+          { ...attributes, id: dataUpdated.length + 1 },
+        ] as ILocation[];
+        setData(newData);
+        setDuplicateData(newData);
+        toast.success("Location created successfully");
+        setIsOpen(false);
+      } catch {
+        toast.error("Error creating location, please try again later");
       }
     }
   };
@@ -199,6 +238,13 @@ const Table: React.FC = () => {
       <button
         onClick={() => {
           setAction(ACTIONS.CREATE);
+          setLocation({
+            "Asset name": "",
+            Address: "",
+            Area: "",
+            Tenant: "",
+            "Rent Paid": "",
+          });
           setIsOpen(true);
         }}
         className="text-white p-2 rounded-lg bg-green-600 flex items-center justify-center my-2 hover:scale-110 duration-300">
@@ -241,16 +287,19 @@ const Table: React.FC = () => {
     };
     oReq.send();
   };
-  React.useEffect(() => {
+  useEffect(() => {
     readExcel();
     setIsLoading(false);
   }, []);
-  React.useEffect(() => {
-    const newData = data;
+  useEffect(() => {
+    let newData = data;
     newData.forEach((item, index) => {
       item.id = index;
+      item["Rent Paid"] = item["Rent Paid"].toString();
+      item["Area"] = item["Area"].toString();
     });
-    setData(newData);
+    setDataUpdated(newData);
+    setDuplicateData(newData);
   }, [data]);
 
   return (
@@ -267,7 +316,7 @@ const Table: React.FC = () => {
         subHeaderComponent={<SubHeaderComponent />}
         customStyles={customStyles}
         columns={columns}
-        data={data}
+        data={dataUpdated}
       />
       <ActionsModal
         isOpen={isOpen}

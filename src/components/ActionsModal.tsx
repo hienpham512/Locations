@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import { ILocation, ACTIONS } from "../pages/Table";
 import {
@@ -6,12 +6,13 @@ import {
   ExclamationTriangleIcon,
   PlusCircleIcon,
 } from "@heroicons/react/24/outline";
+import CreateEditFormModal from "./CreateEditFormModal";
 
 interface IActionsModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   action: ACTIONS;
-  location: ILocation | undefined;
+  location: ILocation;
   onActions: (action: ACTIONS, attributes?: ILocation) => void;
 }
 
@@ -22,6 +23,22 @@ const ActionsModal: React.FC<IActionsModalProps> = ({
   location,
   onActions,
 }) => {
+  const [assetName, setAssetName] = React.useState<string>(
+    location["Asset name"]
+  );
+  const [address, setAddress] = React.useState<string>(location.Address);
+  const [area, setArea] = React.useState<string>(location.Area);
+  const [tenant, setTenant] = React.useState<string>(location.Tenant);
+  const [rentPaid, setRentPaid] = React.useState<string>(location["Rent Paid"]);
+
+  useEffect(() => {
+    setAssetName(location["Asset name"]);
+    setAddress(location.Address);
+    setArea(location.Area);
+    setTenant(location.Tenant);
+    setRentPaid(location["Rent Paid"]);
+  }, [location]);
+
   return (
     <div className={`${isOpen ? "block" : "hidden"}`}>
       <div className="relative z-10">
@@ -42,13 +59,35 @@ const ActionsModal: React.FC<IActionsModalProps> = ({
               <span className="text-3xl">{action}</span>
             </div>
             <div className="p-5">
-              {action === ACTIONS.DELETE
-                ? "Are you sure you want to deactivate your account? All of your data will be permanently removed. This action cannot be undone."
-                : ""}
+              {action === ACTIONS.DELETE ? (
+                "Are you sure you want to deactivate your account? All of your data will be permanently removed. This action cannot be undone."
+              ) : (
+                <CreateEditFormModal
+                  assetName={assetName}
+                  address={address}
+                  area={area}
+                  tenant={tenant}
+                  rentPaid={rentPaid}
+                  setAssetName={setAssetName}
+                  setAddress={setAddress}
+                  setArea={setArea}
+                  setTenant={setTenant}
+                  setRentPaid={setRentPaid}
+                />
+              )}
             </div>
             <div className="flex justify-end items-center border-t p-2 space-x-2">
               <button
-                onClick={() => onActions(action, location)}
+                onClick={() =>
+                  onActions(action, {
+                    id: location.id ? location.id : undefined,
+                    "Asset name": assetName,
+                    Address: address,
+                    Area: area,
+                    Tenant: tenant,
+                    "Rent Paid": rentPaid,
+                  })
+                }
                 className={`border p-2 w-16 rounded-lg ${
                   action === ACTIONS.EDIT
                     ? "bg-blue-600"
