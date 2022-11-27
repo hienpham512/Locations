@@ -6,15 +6,27 @@ import {
   TrashIcon,
   MapPinIcon,
   MagnifyingGlassCircleIcon,
+  PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
-interface ILocation {
+import ActionsModal from "../components/ActionsModal";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+export interface ILocation {
+  id?: number;
   "Asset name": string;
   Address: string;
   Area: number;
   Tenant: string;
   "Rent Paid": number;
+}
+
+export enum ACTIONS {
+  EDIT = "Edit",
+  DELETE = "Delete",
+  CREATE = "Create",
 }
 
 const customStyles = {
@@ -50,11 +62,14 @@ const customStyles = {
   },
 };
 
-const Table = () => {
+const Table: React.FC = () => {
   const [data, setData] = React.useState<ILocation[]>([]);
   const [duplicateData, setDuplicateData] = React.useState<ILocation[]>([]);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [filterText, setFilterText] = React.useState("");
+  const [isOpen, setIsOpen] = React.useState<boolean>(false);
+  const [action, setAction] = React.useState<ACTIONS>(ACTIONS.CREATE);
+  const [location, setLocation] = React.useState<ILocation>();
 
   const handleFilter = (text: string) => {
     setFilterText(text);
@@ -62,6 +77,21 @@ const Table = () => {
       item["Address"].toLowerCase().includes(text.toLowerCase())
     );
     setData(newData);
+  };
+
+  const onActions = (action: ACTIONS, attributes?: ILocation) => {
+    setIsOpen(false);
+    if (action === ACTIONS.DELETE) {
+      try {
+        setIsOpen(false);
+        const newData = data.filter((item) => item.id !== attributes?.id);
+        setData(newData);
+        setDuplicateData(newData);
+        toast.success("Location deleted successfully");
+      } catch {
+        toast.error("Error deleting location, please try again later");
+      }
+    }
   };
 
   const FilterComponent: React.FC = () => (
@@ -132,17 +162,29 @@ const Table = () => {
     },
     {
       name: "Actions",
-      selector: () => (
-        <div className="flex space-x-3">
-          <button className="rounded-lg bg-blue-600 text-white py-1 px-2 flex items-center hover:scale-110 duration-300 my-2 mx-1">
+      selector: (row: ILocation) => (
+        <div className="flex space-x-1">
+          <button
+            onClick={() => {
+              setAction(ACTIONS.EDIT);
+              setLocation(row);
+              setIsOpen(true);
+            }}
+            className="rounded-lg bg-blue-600 text-white px-2 py-1 flex items-center hover:scale-110 duration-300 my-2 ">
             <PencilSquareIcon className="h-5" />
             <span>Edit</span>
           </button>
-          <button className="rounded-lg bg-red-600 text-white py-1 px-2 flex items-center hover:scale-110 duration-300 my-2 mx-1">
+          <button
+            onClick={() => {
+              setAction(ACTIONS.DELETE);
+              setLocation(row);
+              setIsOpen(true);
+            }}
+            className="rounded-lg bg-red-600 text-white px-2 py-1 flex items-center hover:scale-110 duration-300 my-2 ">
             <TrashIcon className="h-5" />
-            <span>Edit</span>
+            <span>Delete</span>
           </button>
-          <button className="rounded-lg bg-green-600 text-white py-1 px-2 flex items-center hover:scale-110 duration-300 my-2 mx-1">
+          <button className="rounded-lg bg-green-600 text-white px-2 py-1 flex items-center hover:scale-110 duration-300 my-2">
             <MapPinIcon className="h-5" />
             <span>Map</span>
           </button>
@@ -151,6 +193,21 @@ const Table = () => {
       width: "280px",
     },
   ];
+
+  const SubHeaderComponent: React.FC = () => (
+    <div className="flex justify-end flex-col">
+      <button
+        onClick={() => {
+          setAction(ACTIONS.CREATE);
+          setIsOpen(true);
+        }}
+        className="text-white p-2 rounded-lg bg-green-600 flex items-center justify-center my-2 hover:scale-110 duration-300">
+        <PlusCircleIcon className="h-8" />
+        <span className="ml-1">Add new map</span>
+      </button>
+      <FilterComponent />
+    </div>
+  );
 
   const readExcel = () => {
     const url = "../../src/excelFile/location.xlsx";
@@ -188,6 +245,13 @@ const Table = () => {
     readExcel();
     setIsLoading(false);
   }, []);
+  React.useEffect(() => {
+    const newData = data;
+    newData.forEach((item, index) => {
+      item.id = index;
+    });
+    setData(newData);
+  }, [data]);
 
   return (
     <div className="border m-5">
@@ -200,11 +264,19 @@ const Table = () => {
         highlightOnHover
         pointerOnHover
         dense
-        subHeaderComponent={<FilterComponent />}
+        subHeaderComponent={<SubHeaderComponent />}
         customStyles={customStyles}
         columns={columns}
         data={data}
       />
+      <ActionsModal
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        action={action}
+        location={location}
+        onActions={onActions}
+      />
+      <ToastContainer />
     </div>
   );
 };
