@@ -7,15 +7,23 @@ import {
   MapPinIcon,
   MagnifyingGlassCircleIcon,
   PlusCircleIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 import ActionsModal from "../components/ActionsModal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  addToDB,
+  getAllDataFromCollection,
+  deleteLocationId,
+  updateLocationById,
+} from "../actions/table";
+import { v4 as uuidv4 } from "uuid";
 
 export interface ILocation {
-  id?: number;
+  id: string;
   "Asset name": string;
   Address: string;
   Area: string;
@@ -29,6 +37,7 @@ export enum ACTIONS {
   CREATE = "Create",
 }
 
+const collectionName = "locations";
 const customStyles = {
   header: {
     style: {
@@ -70,13 +79,13 @@ const Table: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [action, setAction] = useState<ACTIONS>(ACTIONS.CREATE);
   const [location, setLocation] = useState<ILocation>({
+    id: "",
     "Asset name": "",
     Address: "",
     Area: "",
     Tenant: "",
     "Rent Paid": "",
   });
-  const [dataUpdated, setDataUpdated] = useState<ILocation[]>([]);
 
   const handleFilter = (text: string) => {
     setFilterText(text);
@@ -86,11 +95,12 @@ const Table: React.FC = () => {
     setData(newData);
   };
 
-  const onActions = (action: ACTIONS, attributes?: ILocation) => {
+  const onActions = async (action: ACTIONS, attributes: ILocation) => {
     setIsOpen(false);
     if (action === ACTIONS.DELETE) {
       try {
-        let newData = dataUpdated.filter((item) => item.id !== attributes?.id);
+        await deleteLocationId(collectionName, attributes.id);
+        let newData = data.filter((item) => item.id !== attributes.id);
         setData(newData);
         setDuplicateData(newData);
         toast.success("Location deleted successfully");
@@ -100,9 +110,9 @@ const Table: React.FC = () => {
       }
     } else if (action === ACTIONS.EDIT) {
       try {
-        let newData = dataUpdated;
+        let newData = data;
         newData.forEach((item) => {
-          if (item.id === attributes?.id) {
+          if (item.id === attributes.id) {
             item["Asset name"] = attributes!["Asset name"];
             item.Address = attributes!.Address;
             item.Area = attributes!.Area;
@@ -110,6 +120,7 @@ const Table: React.FC = () => {
             item["Rent Paid"] = attributes!["Rent Paid"];
           }
         });
+        updateLocationById(collectionName, attributes, attributes.id);
         setData(newData);
         setDuplicateData(newData);
         toast.success("Location edited successfully");
@@ -119,10 +130,11 @@ const Table: React.FC = () => {
       }
     } else if (action === ACTIONS.CREATE) {
       try {
-        const newData = [
-          ...dataUpdated,
-          { ...attributes, id: dataUpdated.length + 1 },
-        ] as ILocation[];
+        const newLocation = {
+          ...attributes,
+        } as ILocation;
+        const newData = [...data, newLocation] as ILocation[];
+        addToDB(collectionName, newLocation, uuidv4());
         setData(newData);
         setDuplicateData(newData);
         toast.success("Location created successfully");
@@ -134,7 +146,7 @@ const Table: React.FC = () => {
   };
 
   const FilterComponent: React.FC = () => (
-    <div className="flex items-center">
+    <div className="flex w-full items-center">
       <input
         type="text"
         value={filterText}
@@ -239,6 +251,7 @@ const Table: React.FC = () => {
         onClick={() => {
           setAction(ACTIONS.CREATE);
           setLocation({
+            id: "",
             "Asset name": "",
             Address: "",
             Area: "",
@@ -249,59 +262,39 @@ const Table: React.FC = () => {
         }}
         className="text-white p-2 rounded-lg bg-green-600 flex items-center justify-center my-2 hover:scale-110 duration-300">
         <PlusCircleIcon className="h-8" />
-        <span className="ml-1">Add new map</span>
+        <span className="ml-1">Add new location</span>
+      </button>
+      <button
+        onClick={() => {
+          writeExcel(data);
+        }}
+        className="text-white p-2 rounded-lg bg-yellow-600 flex items-center justify-center my-2 hover:scale-110 duration-300">
+        <ArrowDownTrayIcon className="h-8" />
+        <span className="ml-1">Download xlsx file</span>
       </button>
       <FilterComponent />
     </div>
   );
 
-  const readExcel = () => {
-    const url = "../../src/excelFile/location.xlsx";
-    const oReq = new XMLHttpRequest();
-    oReq.open("GET", url, true);
-    oReq.responseType = "arraybuffer";
+  const writeExcel = (newData: ILocation[]) => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(newData);
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, "location.xlsx", {
+      bookType: "xlsx",
+      type: "file",
+    });
+  };
 
-    oReq.onload = (e) => {
-      const arraybuffer = oReq.response;
-      const data = new Uint8Array(arraybuffer);
-      const arr: any[] = [];
-      data.forEach((d, index) => {
-        arr[index] = String.fromCharCode(d);
-      });
-      const bstr = arr.join("");
-      const workbook = XLSX.read(bstr, {
-        type: "binary",
-      });
-      const first_sheet_name = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[first_sheet_name];
-      setData(
-        XLSX.utils.sheet_to_json(worksheet, {
-          raw: true,
-        })
-      );
-      setDuplicateData(
-        XLSX.utils.sheet_to_json(worksheet, {
-          raw: true,
-        })
-      );
-    };
-    oReq.send();
+  const getData = async () => {
+    const newData = await getAllDataFromCollection(collectionName);
+    setData(newData);
+    setDuplicateData(newData);
   };
   useEffect(() => {
-    readExcel();
+    getData();
     setIsLoading(false);
   }, []);
-  useEffect(() => {
-    let newData = data;
-    newData.forEach((item, index) => {
-      item.id = index;
-      item["Rent Paid"] = item["Rent Paid"].toString();
-      item["Area"] = item["Area"].toString();
-    });
-    setDataUpdated(newData);
-    setDuplicateData(newData);
-  }, [data]);
-
   return (
     <div className="border m-5">
       <DataTable
@@ -316,7 +309,7 @@ const Table: React.FC = () => {
         subHeaderComponent={<SubHeaderComponent />}
         customStyles={customStyles}
         columns={columns}
-        data={dataUpdated}
+        data={data}
       />
       <ActionsModal
         isOpen={isOpen}

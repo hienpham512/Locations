@@ -13,7 +13,7 @@ interface IActionsModalProps {
   setIsOpen: (isOpen: boolean) => void;
   action: ACTIONS;
   location: ILocation;
-  onActions: (action: ACTIONS, attributes?: ILocation) => void;
+  onActions: (action: ACTIONS, attributes: ILocation) => void;
 }
 
 const ActionsModal: React.FC<IActionsModalProps> = ({
@@ -80,7 +80,7 @@ const ActionsModal: React.FC<IActionsModalProps> = ({
               <button
                 onClick={() =>
                   onActions(action, {
-                    id: location.id ? location.id : undefined,
+                    id: location.id,
                     "Asset name": assetName,
                     Address: address,
                     Area: area,
