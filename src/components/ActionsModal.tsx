@@ -10,6 +10,7 @@ import {
 import CreateEditFormModal from "./CreateEditFormModal";
 import { GoogleMap, LoadScript } from "@react-google-maps/api";
 import { Marker } from "@react-google-maps/api";
+import { ToastContainer, toast } from "react-toastify";
 
 interface IActionsModalProps {
   isOpen: boolean;
@@ -45,6 +46,33 @@ const ActionsModal: React.FC<IActionsModalProps> = ({
     setRentPaid(location["Rent Paid"]);
     setCoordinates(location.coordinates);
   }, [location]);
+
+  const handleOnSubmit = () => {
+    if (
+      assetName === "" ||
+      address === "" ||
+      area === "" ||
+      tenant === "" ||
+      rentPaid === ""
+    ) {
+      toast.error("Please fill all the fields");
+      return;
+    }
+
+    if (coordinates.lat === 0 && coordinates.lng === 0) {
+      toast.error("Please select a location");
+      return;
+    }
+    onActions(action, {
+      id: location.id,
+      "Asset name": assetName,
+      Address: address,
+      Area: area,
+      Tenant: tenant,
+      "Rent Paid": rentPaid,
+      coordinates: coordinates,
+    });
+  };
 
   return (
     <div className={`${isOpen ? "block" : "hidden"}`}>
@@ -92,17 +120,7 @@ const ActionsModal: React.FC<IActionsModalProps> = ({
             <div className="flex border-t p-2 space-x-2 justify-end">
               {action !== ACTIONS.MAP && (
                 <button
-                  onClick={() =>
-                    onActions(action, {
-                      id: location.id,
-                      "Asset name": assetName,
-                      Address: address,
-                      Area: area,
-                      Tenant: tenant,
-                      "Rent Paid": rentPaid,
-                      coordinates: coordinates,
-                    })
-                  }
+                  onClick={handleOnSubmit}
                   className={`border p-2 w-16 rounded-lg ${
                     action === ACTIONS.EDIT
                       ? "bg-blue-600"
@@ -124,6 +142,7 @@ const ActionsModal: React.FC<IActionsModalProps> = ({
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

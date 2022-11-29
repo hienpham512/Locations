@@ -1,13 +1,10 @@
 import { db } from "../firebase/firebase";
 import {
   collection,
-  addDoc,
   getDocs,
   setDoc,
   doc,
   deleteDoc,
-  updateDoc,
-  getDoc,
 } from "firebase/firestore";
 import { ILocation } from "../pages/Table";
 
