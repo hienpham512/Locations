@@ -108,6 +108,8 @@ const ActionsModal: React.FC<IActionsModalProps> = ({
                       ? "bg-blue-600"
                       : action === ACTIONS.DELETE
                       ? "bg-red-600"
+                      : action === ACTIONS.CREATE
+                      ? "bg-green-600"
                       : ""
                   } text-white hover:scale-110 duration-300`}>
                   {action}
