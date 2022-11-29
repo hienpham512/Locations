@@ -118,6 +118,7 @@ const Plan: React.FC = () => {
           type="text"
           placeholder="Search for a place"
           onChange={(e) => handleFilter(e.target.value)}
+          autoFocus
           style={{
             boxSizing: `border-box`,
             border: `1px solid transparent`,
