@@ -29,15 +29,20 @@ export interface ILocation {
   Area: string;
   Tenant: string;
   "Rent Paid": string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export enum ACTIONS {
   EDIT = "Edit",
   DELETE = "Delete",
   CREATE = "Create",
+  MAP = "Map",
 }
 
-const collectionName = "locations";
+const collectionName = import.meta.env.VITE_FIREBASE_COLLECTION_LOCATIONS;
 const customStyles = {
   header: {
     style: {
@@ -85,6 +90,10 @@ const Table: React.FC = () => {
     Area: "",
     Tenant: "",
     "Rent Paid": "",
+    coordinates: {
+      lat: 0,
+      lng: 0,
+    },
   });
 
   const handleFilter = (text: string) => {
@@ -118,6 +127,7 @@ const Table: React.FC = () => {
             item.Area = attributes!.Area;
             item.Tenant = attributes!.Tenant;
             item["Rent Paid"] = attributes!["Rent Paid"];
+            item.coordinates = attributes!.coordinates;
           }
         });
         updateLocationById(collectionName, attributes, attributes.id);
@@ -235,7 +245,13 @@ const Table: React.FC = () => {
             <TrashIcon className="h-5" />
             <span>Delete</span>
           </button>
-          <button className="rounded-lg bg-green-600 text-white px-2 py-1 flex items-center hover:scale-110 duration-300 my-2">
+          <button
+            onClick={() => {
+              setAction(ACTIONS.MAP);
+              setLocation(row);
+              setIsOpen(true);
+            }}
+            className="rounded-lg bg-green-600 text-white px-2 py-1 flex items-center hover:scale-110 duration-300 my-2">
             <MapPinIcon className="h-5" />
             <span>Map</span>
           </button>
@@ -257,6 +273,10 @@ const Table: React.FC = () => {
             Area: "",
             Tenant: "",
             "Rent Paid": "",
+            coordinates: {
+              lat: 0,
+              lng: 0,
+            },
           });
           setIsOpen(true);
         }}
