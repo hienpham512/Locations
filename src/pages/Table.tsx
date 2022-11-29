@@ -213,37 +213,10 @@ const Table: React.FC = () => {
     },
     {
       name: "Actions",
-      selector: (row: ILocation) => (
-        <div className="flex space-x-1">
-          <button
-            onClick={() => {
-              setAction(ACTIONS.EDIT);
-              setLocation(row);
-              setIsOpen(true);
-            }}
-            className="rounded-lg bg-blue-600 text-white px-2 py-1 flex items-center hover:scale-110 duration-300 my-2 ">
-            <PencilSquareIcon className="h-5" />
-            <span>Edit</span>
-          </button>
-          <button
-            onClick={() => {
-              setAction(ACTIONS.DELETE);
-              setLocation(row);
-              setIsOpen(true);
-            }}
-            className="rounded-lg bg-red-600 text-white px-2 py-1 flex items-center hover:scale-110 duration-300 my-2 ">
-            <TrashIcon className="h-5" />
-            <span>Delete</span>
-          </button>
-          <button className="rounded-lg bg-green-600 text-white px-2 py-1 flex items-center hover:scale-110 duration-300 my-2">
-            <MapPinIcon className="h-5" />
-            <span>Map</span>
-          </button>
-        </div>
-      ),
+      selector: (row: ILocation) => <></>,
       width: "280px",
     },
-  ];
+  ] as any;
 
   const SubHeaderComponent: React.FC = () => (
     <div className="flex justify-end flex-col">
