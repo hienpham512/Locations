@@ -1,4 +1,4 @@
-# Location Workspace App
+# Locations Workspace App
 
 ## Overview
 
